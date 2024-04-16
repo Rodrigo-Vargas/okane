@@ -1,11 +1,16 @@
 module Okane
   class OFX
     def self.parse(content)
-      match = /OFXHEADER:(.+)/.match(content)
+      lines = content.split("\n")
 
-      return {
-        "OFXHEADER" => match[1]
-      }
+      result = {}
+
+      lines.each do |line|
+        match = /(.+):(.+)/.match(line)
+        result[match[1].strip] = match[2]
+      end
+
+      return result
     end
   end
 end
