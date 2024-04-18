@@ -1,7 +1,5 @@
 module Okane
   class OFX
-    AGGREGATE_TAGS = ["OFX"]
-
     def self.parse(content)
       lines = content.split("\n")
 
@@ -18,22 +16,33 @@ module Okane
         line = line.strip
 
         if (attribute_tag_pattern.match?(line))
-          puts "attribute_tag_pattern"
           match = attribute_tag_pattern.match(line)
           tag = match[1]
           value = match[2]
-          result[tag_stack.first][tag] = value.to_s
+
+          target_object = result.dig(*tag_stack)
+          target_object[tag] = value.to_s
         elsif (header_pattern.match?(line))
           match = header_pattern.match(line)
           result[match[1]] = match[2]
         elsif (aggregate_closing_tag_pattern.match?(line))
           tag_stack.pop
-          puts "No pattern found"
         elsif (aggregate_tag_pattern.match?(line))
           match = aggregate_tag_pattern.match(line)
           tag = match[1]
-          result[tag] = {}
+
+          if (tag_stack.count > 0)
+            target_object = result.dig(*tag_stack)
+
+            target_object[tag] = {}
+          else
+            result[tag] = {}
+          end
+
           tag_stack.append(tag)
+
+        else
+          puts "No pattern found"
         end
       end
 
