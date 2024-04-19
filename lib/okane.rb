@@ -14,16 +14,28 @@ module Okane
         aggregate_tag_pattern = /<(.+)>/
         aggregate_closing_tag_pattern = /<\/(.+)>/
         attribute_tag_pattern = /<(.+)>(.+)/
+        attribute_closing_tag_pattern = /<(.+)>(.+)<\/.+>/
 
         line = line.strip
 
-        if (attribute_tag_pattern.match?(line))
-          match = attribute_tag_pattern.match(line)
+        if (attribute_closing_tag_pattern.match?(line))
+          match = attribute_closing_tag_pattern.match(line)
           tag = match[1]
           value = match[2]
 
           target_object = result.dig(*tag_stack)
 
+          if (target_object.class == Hash)
+            target_object[tag] = value.to_s
+          else
+            target_object.last()[tag] = value.to_s
+          end
+        elsif (attribute_tag_pattern.match?(line))
+          match = attribute_tag_pattern.match(line)
+          tag = match[1]
+          value = match[2]
+
+          target_object = result.dig(*tag_stack)
 
           if (target_object.class == Hash)
             target_object[tag] = value.to_s
@@ -56,7 +68,6 @@ module Okane
           end
 
           tag_stack.append(tag)
-
         elsif (line.size == 0)
           # Do nothing
         else
