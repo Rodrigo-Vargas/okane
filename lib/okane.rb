@@ -1,4 +1,6 @@
 module Okane
+  ENUMERABLE_TAGS = ["STMTTRN"]
+
   class OFX
     def self.parse(content)
       lines = content.split("\n")
@@ -21,7 +23,13 @@ module Okane
           value = match[2]
 
           target_object = result.dig(*tag_stack)
-          target_object[tag] = value.to_s
+
+
+          if (target_object.class == Hash)
+            target_object[tag] = value.to_s
+          else
+            target_object.last()[tag] = value.to_s
+          end
         elsif (header_pattern.match?(line))
           match = header_pattern.match(line)
           result[match[1]] = match[2]
@@ -34,14 +42,25 @@ module Okane
           if (tag_stack.count > 0)
             target_object = result.dig(*tag_stack)
 
-            target_object[tag] = {}
+            if (Okane::ENUMERABLE_TAGS.find_index(tag) != nil)
+              if (target_object[tag] == nil)
+                target_object[tag] = []
+              end
+
+              target_object[tag].append({})
+            else
+              target_object[tag] = {}
+            end
           else
             result[tag] = {}
           end
 
           tag_stack.append(tag)
 
+        elsif (line.size == 0)
+          # Do nothing
         else
+          puts line
           puts "No pattern found"
         end
       end
